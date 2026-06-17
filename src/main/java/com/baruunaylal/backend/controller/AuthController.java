@@ -4,11 +4,15 @@ package com.baruunaylal.backend.controller;
 import com.baruunaylal.backend.dto.AuthResponse;
 import com.baruunaylal.backend.dto.LoginRequest;
 import com.baruunaylal.backend.dto.RegisterRequest;
+import com.baruunaylal.backend.dto.RestErrorResponse;
 import com.baruunaylal.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
 
 import java.util.Map;
 
@@ -39,8 +43,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, WebRequest webRequest) {
+        try {
+            return ResponseEntity.ok(authService.login(request));
+        } catch (RuntimeException ex) {
+            String path = ((ServletWebRequest) webRequest).getRequest().getRequestURI();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new RestErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase(), path));
+        }
     }
 
     @PostMapping("/forgot-password")
